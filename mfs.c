@@ -39,6 +39,8 @@
 
 #define MAX_NUM_ARGUMENTS 10     // Mav shell only supports ten arguments
 
+int handle_command( char* cmd );
+
 int main()
 {
 
@@ -73,7 +75,7 @@ int main()
     char *working_root = working_str;
 
     // Tokenize the input stringswith whitespace used as the delimiter
-    while ( ( (arg_ptr = strsep(&working_str, WHITESPACE ) ) != NULL ) && 
+    while ( ( (arg_ptr = strsep(&working_str, WHITESPACE) ) != NULL) && 
               (token_count<MAX_NUM_ARGUMENTS))
     {
       token[token_count] = strndup( arg_ptr, MAX_COMMAND_SIZE );
@@ -88,13 +90,30 @@ int main()
     // \TODO Remove this code and replace with your shell functionality
 
     int token_index  = 0;
-    for( token_index = 0; token_index < token_count; token_index ++ ) 
-    {
-      printf("token[%d] = %s\n", token_index, token[token_index] );  
-    }
+    // for( token_index = 0; token_index < token_count; token_index ++ ) 
+    // {
+    //   printf("token[%d] = %s\n", token_index, token[token_index] );  
+    // }
+
+    char *cmd = token[token_index];
+    handle_command( cmd );
 
     free( working_root );
 
   }
+  return 0;
+}
+
+int handle_command( char *cmd )
+{
+  // If the command is cd, I have to use a different handler.
+  // I'm checking it first to move past that case.
+  if ( strcmp("cd", cmd) == 0 )
+  {
+    printf("Changing dir\n");
+    return 0;
+  }
+
+  printf("Command is %s\n", cmd);
   return 0;
 }
