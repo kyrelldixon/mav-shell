@@ -1,7 +1,7 @@
-mfs:
+mfs: mfs.c
 	gcc -Wall mfs.c -o mfs
 
-run:
+run: mfs
 	./mfs
 
 clean:
