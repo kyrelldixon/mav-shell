@@ -46,6 +46,7 @@
 
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[] );
+int handle_exec_error( char* cmd );
 void print_tokens( char* tokens[], int token_count );
 char *concat_strings( char *s1, char *s2 );
 char *concat_path( char *path, char *filename );
@@ -168,13 +169,24 @@ int exec_to_completion( char *tokens[] )
 
   if ( child_pid == 0 )
   {
-    execv(filepath, tokens);
+    if ( execv(filepath, tokens) < 0)
+    {
+      handle_exec_error( exec_file );
+    }
     free(filepath); // The calling function should free the memory
     exit(EXIT_SUCCESS);
   }
 
   waitpid(child_pid, &status, 0);
+  
+  return 0;
+}
 
+int handle_exec_error( char* exec_file )
+{
+  if ( errno == 2 ) {
+    printf("%s: Command not found.\n", exec_file);
+  }
   return 0;
 }
 
