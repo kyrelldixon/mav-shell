@@ -38,13 +38,21 @@
 
 #define MAX_COMMAND_SIZE 255    // The maximum command-line size
 
-#define MAX_NUM_ARGUMENTS 10     // Mav shell only supports ten arguments
+#define MAX_NUM_ARGUMENTS 10    // Mav shell only supports ten arguments
 
-#define EXEC_FILE_INDEX 0
+#define EXEC_FILE_INDEX 0       // The file to execute should always be at index 0
+
+// PATH variable constants for checking where file
+// should execute from
+char *PATH_BIN = "/bin";
+char *PATH_USR_BIN = "/usr/bin";
+char *PATH_USR_LOCAL_BIN = "/usr/local/bin";
 
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[] );
 void print_tokens( char* tokens[], int token_count );
+char *concat_strings(char *s1, char *s2);
+char *concat_path(char *path, char *filename);
 
 int main()
 {
@@ -101,24 +109,26 @@ int main()
 
 int handle_tokens( char *tokens[], int token_count )
 {
-  char* exec_file = tokens[EXEC_FILE_INDEX];
+  char *cmd = tokens[EXEC_FILE_INDEX];
 
   // If the command is cd, I have to use a different handler.
   // I'm checking it first to move past that case.
-  if ( strcmp("cd", exec_file) == 0 )
+  if ( ( strcmp("quit", cmd) == 0) || ( strcmp("exit", cmd) == 0) )
   {
+    exit(0);
+  }
+  else if ( strcmp("cd", cmd) == 0 ) {
     printf("Changing dir\n");
     return 0;
   }
-  else if (strcmp("ls", exec_file) == 0)
+  else if ( strcmp("ls", cmd) == 0 )
   {
     return exec_to_completion( tokens );
   }
   else {
-    printf("Have not implemented function %s\n", exec_file);
+    printf("Have not implemented function %s\n", cmd);
   }
 
-  printf("Command is %s\n", exec_file);
   return 0;
 }
 
@@ -131,9 +141,13 @@ int exec_to_completion( char *tokens[] )
   pid_t child_pid = fork();
   int status;
 
+  char *exec_file = tokens[EXEC_FILE_INDEX];
+  char *filepath = concat_path(PATH_BIN, exec_file);
+
   if ( child_pid == 0 )
   {
-    execv("/bin/ls", tokens);
+    execv(filepath, tokens);
+    free(filepath);
     exit(EXIT_SUCCESS);
   }
 
@@ -148,4 +162,24 @@ void print_tokens( char* tokens[], int token_count )
   {
     printf("token[%d]: %s\n", i, tokens[i]);
   }
+}
+
+char *concat_strings(char *s1, char *s2)
+{
+  char *concatted_string = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
+
+  strcpy(concatted_string, s1);
+  strcat(concatted_string, s2);
+  return concatted_string;
+}
+
+char *concat_path(char *path, char *filename)
+{
+  // +1 for the null-terminator
+  // +1 more for the "/" character
+  char *result = malloc(strlen(path) + strlen(filename) + 2);
+  char *str = concat_strings(path, "/");
+  result = concat_strings(str, filename);
+
+  return result;
 }
