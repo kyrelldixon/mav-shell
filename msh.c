@@ -96,8 +96,13 @@ int main()
         token_count++;
     }
 
-    handle_tokens( tokens, token_count );
-
+    // Checks to make sure there are actual tokens
+    // before attempting to handle them. If null
+    // I want to start taking input again.
+    if ( tokens[EXEC_FILE_INDEX] ) {
+      handle_tokens( tokens, token_count );
+    }
+    
     free( working_root );
 
   }
