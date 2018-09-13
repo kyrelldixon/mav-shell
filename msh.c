@@ -123,7 +123,20 @@ int handle_tokens( char *tokens[], int token_count )
     return 0;
   }
 
-  // Implement history, listpids, bg
+  if ( streq("history", cmd) )
+  {
+    printf("getting history\n");
+  }
+
+  if ( streq("listpids", cmd) )
+  {
+    printf("getting list of pids\n");
+  }
+
+  if ( streq("bg", cmd) )
+  {
+    printf("getting bg\n");
+  }
   
   exec_to_completion( tokens );
 
@@ -198,7 +211,7 @@ bool streq( char *s1, char *s2 )
 {
   if ( strcmp( s1, s2 ) == 0 )
   {
-    return 1;
+    return true;
   }
-  return 0;
+  return false;
 }
