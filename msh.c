@@ -47,8 +47,9 @@
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[] );
 void print_tokens( char* tokens[], int token_count );
-char *concat_strings(char *s1, char *s2);
-char *concat_path(char *path, char *filename);
+char *concat_strings( char *s1, char *s2 );
+char *concat_path( char *path, char *filename );
+bool streq( char *s1, char *s2 );
 
 int main()
 {
@@ -110,13 +111,13 @@ int handle_tokens( char *tokens[], int token_count )
 {
   char *cmd = tokens[EXEC_FILE_INDEX];
 
-  if ( ( strcmp("quit", cmd) == 0) || ( strcmp("exit", cmd) == 0) )
+  if ( streq("quit", cmd) || streq("exit", cmd) )
   {
     exit(0);
   }
   // If the command is cd, I have to use a different handler
   // so I check for that separately
-  if ( strcmp("cd", cmd) == 0 )
+  if ( streq("cd", cmd) )
   {
     chdir(tokens[FILE_PATH_INDEX]);
     return 0;
@@ -191,4 +192,13 @@ char *concat_path(char *path, char *filename)
   result = concat_strings(str, filename);
 
   return result;
+}
+
+bool streq( char *s1, char *s2 )
+{
+  if ( strcmp( s1, s2 ) == 0 )
+  {
+    return 1;
+  }
+  return 0;
 }
