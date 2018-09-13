@@ -47,6 +47,10 @@
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[] );
 int handle_exec_error( char* cmd );
+int savepid( pid_t pid );
+int savehist( char* cmd );
+void showhist();
+
 void print_tokens( char* tokens[], int token_count );
 char *concat_strings( char *s1, char *s2 );
 char *concat_path( char *path, char *filename );
@@ -129,22 +133,24 @@ int handle_tokens( char *tokens[], int token_count )
     return 0;
   }
 
-  if ( streq("history", cmd) )
+  else if ( streq("history", cmd) )
   {
     printf("getting history\n");
   }
 
-  if ( streq("listpids", cmd) )
+  else if ( streq("listpids", cmd) )
   {
     printf("getting list of pids\n");
   }
 
-  if ( streq("bg", cmd) )
+  else if ( streq("bg", cmd) )
   {
     printf("getting bg\n");
   }
-  
-  exec_to_completion( tokens );
+
+  else {
+    exec_to_completion(tokens);
+  }
 
   return 0;
 }
@@ -189,6 +195,20 @@ int handle_exec_error( char* exec_file )
   }
   return 0;
 }
+
+int savepid( pid_t pid )
+{
+  printf("saving pid %d\n", pid);
+  return 0;
+}
+
+int savehist( char* cmd )
+{
+  printf("saving cmd %s\n", cmd);
+  return 0;
+}
+
+void showhist();
 
 /*
  * < -------------- UTILITIES -------------- >
