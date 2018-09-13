@@ -1,8 +1,8 @@
-mfs: mfs.c
-	gcc -Wall mfs.c -o mfs
+mfs: msh.c
+	gcc -Wall msh.c -o msh
 
-run: mfs
-	./mfs
+run: msh
+	./msh
 
 clean:
-	rm -rf *.o *.out mfs
+	rm -rf *.o *.out msh
