@@ -41,12 +41,8 @@
 #define MAX_NUM_ARGUMENTS 10    // Mav shell only supports ten arguments
 
 #define EXEC_FILE_INDEX 0       // The file to execute should always be at index 0
+#define FILE_PATH_INDEX 1       // The file path (for "cd") should always be at index 1
 
-// PATH variable constants for checking where file
-// should execute from
-char *PATH_BIN = "/bin";
-char *PATH_USR_BIN = "/usr/bin";
-char *PATH_USR_LOCAL_BIN = "/usr/local/bin";
 
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[] );
@@ -104,6 +100,9 @@ int main()
     free( working_root );
 
   }
+
+  free ( cmd_str );
+
   return 0;
 }
 
@@ -111,23 +110,21 @@ int handle_tokens( char *tokens[], int token_count )
 {
   char *cmd = tokens[EXEC_FILE_INDEX];
 
-  // If the command is cd, I have to use a different handler.
-  // I'm checking it first to move past that case.
   if ( ( strcmp("quit", cmd) == 0) || ( strcmp("exit", cmd) == 0) )
   {
     exit(0);
   }
-  else if ( strcmp("cd", cmd) == 0 ) {
-    printf("Changing dir\n");
+  // If the command is cd, I have to use a different handler
+  // so I check for that separately
+  if ( strcmp("cd", cmd) == 0 )
+  {
+    chdir(tokens[FILE_PATH_INDEX]);
     return 0;
   }
-  else if ( strcmp("ls", cmd) == 0 )
-  {
-    return exec_to_completion( tokens );
-  }
-  else {
-    printf("Have not implemented function %s\n", cmd);
-  }
+
+  // Implement history, listpids, bg
+  
+  exec_to_completion( tokens );
 
   return 0;
 }
@@ -141,13 +138,19 @@ int exec_to_completion( char *tokens[] )
   pid_t child_pid = fork();
   int status;
 
+  // PATH variable constants for checking where file
+  // should execute from
+  char *PATH_BIN = "/bin";
+  char *PATH_USR_BIN = "/usr/bin";
+  char *PATH_USR_LOCAL_BIN = "/usr/local/bin";
+
   char *exec_file = tokens[EXEC_FILE_INDEX];
   char *filepath = concat_path(PATH_BIN, exec_file);
 
   if ( child_pid == 0 )
   {
     execv(filepath, tokens);
-    free(filepath);
+    free(filepath); // The calling function should free the memory
     exit(EXIT_SUCCESS);
   }
 
@@ -155,6 +158,12 @@ int exec_to_completion( char *tokens[] )
 
   return 0;
 }
+
+/*
+ * < -------------- UTILITIES -------------- >
+ * This is a set of function that do nothing
+ * but make my life easier.
+*/
 
 void print_tokens( char* tokens[], int token_count )
 {
