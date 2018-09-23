@@ -1,25 +1,3 @@
-// The MIT License (MIT)
-// 
-// Copyright (c) 2016, 2017 Trevor Bakker 
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 /*
 
   Name: Kyrell Dixon
@@ -57,6 +35,7 @@ int num_cmds_in_history = 0;
 pid_t pids[MAX_PIDS];
 int num_pids_in_pids = 0;
 
+int tokenize_string( char* cmd_str, char *tokens[], int token_count );
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[], int token_count );
 int handle_exec_error( char* cmd );
@@ -95,28 +74,7 @@ int main()
 
     int   token_count = 0;                                 
                                                            
-    // Pointer to point to the token
-    // parsed by strsep
-    char *arg_ptr;                                         
-                                                           
-    char *working_str  = strdup( cmd_str );                
-
-    // we are going to move the working_str pointer so
-    // keep track of its original value so we can deallocate
-    // the correct amount at the end
-    char *working_root = working_str;
-
-    // Tokenize the input strings with whitespace used as the delimiter
-    while ( ( (arg_ptr = strsep(&working_str, WHITESPACE) ) != NULL) && 
-              (token_count<MAX_NUM_ARGUMENTS))
-    {
-      tokens[token_count] = strndup( arg_ptr, MAX_COMMAND_SIZE );
-      if( strlen( tokens[token_count] ) == 0 )
-      {
-        tokens[token_count] = NULL;
-      }
-        token_count++;
-    }
+    token_count = tokenize_string( cmd_str, tokens, token_count );
 
     // Checks to make sure there are actual tokens
     // before attempting to handle them. If NULL
@@ -125,8 +83,6 @@ int main()
       handle_tokens( tokens, token_count );
     }
     
-    free( working_root );
-
   }
 
   free ( cmd_str );
@@ -320,13 +276,52 @@ void showhist()
 */
 
 /**
+ * Takes a string delimitted by whitespace and stores
+ * each set of characters as a token in tokens array
+ * 
+ * @param cmd_str The string to be tokenized
+ * @param tokens List of tokens processed from user input
+ * @param token_count The total number of tokens in tokens array
+ * @return the updated token_count
+ */
+int tokenize_string( char *cmd_str, char *tokens[], int token_count )
+{
+  // Pointer to point to the token
+  // parsed by strsep
+  char *arg_ptr;
+
+  char *working_str = strdup(cmd_str);
+
+  // we are going to move the working_str pointer so
+  // keep track of its original value so we can deallocate
+  // the correct amount at the end
+  char *working_root = working_str;
+
+  // Tokenize the input strings with whitespace used as the delimiter
+  while (((arg_ptr = strsep(&working_str, WHITESPACE)) != NULL) &&
+         (token_count < MAX_NUM_ARGUMENTS))
+  {
+    tokens[token_count] = strndup(arg_ptr, MAX_COMMAND_SIZE);
+    if (strlen(tokens[token_count]) == 0)
+    {
+      tokens[token_count] = NULL;
+    }
+    token_count++;
+  }
+
+  free( working_root );
+
+  return token_count;
+}
+
+/**
  * Prints tokens nicely formatted for debugging
  * 
  * @param tokens List of tokens processed from user input
  * @param token_count The total number of tokens in tokens array
  * @return nothing
  */
-void print_tokens( char* tokens[], int token_count )
+void print_tokens( char *tokens[], int token_count )
 {
   for (int i = 0; i < token_count; i++)
   {
