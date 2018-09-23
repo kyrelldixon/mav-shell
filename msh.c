@@ -43,15 +43,17 @@
 #define EXEC_FILE_INDEX 0       // The file to execute should always be at index 0
 #define FILE_PATH_INDEX 1       // The file path (for "cd") should always be at index 1
 
+char *cmd_history[15];          // Used to keep track of the last 15 commands
+int num_cmds_in_history = 0;
 
 int handle_tokens( char *tokens[], int token_count );
-int exec_to_completion( char *tokens[] );
+int exec_to_completion( char *tokens[], int token_count );
 int handle_exec_error( char* cmd );
 int savepid( pid_t pid );
-int savehist( char* cmd );
+int savehist( char *cmd_str );
 void showhist();
 
-void print_tokens( char* tokens[], int token_count );
+void print_tokens( char *tokens[], int token_count );
 char *concat_strings( char *s1, char *s2 );
 char *concat_path( char *path, char *filename );
 bool streq( char *s1, char *s2 );
@@ -72,6 +74,9 @@ int main()
     // inputs something since fgets returns NULL when there
     // is no input
     while( !fgets (cmd_str, MAX_COMMAND_SIZE, stdin) );
+
+    // Before tokenizing, save the input to history
+    savehist( cmd_str );
 
     /* Parse input */
     char *tokens[MAX_NUM_ARGUMENTS];
@@ -113,6 +118,12 @@ int main()
   }
 
   free ( cmd_str );
+  for (int i = 0; i < num_cmds_in_history; i++)
+  {
+    free ( cmd_history[i] );
+  }
+
+  free ( cmd_history );
 
   return 0;
 }
@@ -130,12 +141,11 @@ int handle_tokens( char *tokens[], int token_count )
   if ( streq("cd", cmd) )
   {
     chdir(tokens[FILE_PATH_INDEX]);
-    return 0;
   }
 
   else if ( streq("history", cmd) )
   {
-    printf("getting history\n");
+    showhist();
   }
 
   else if ( streq("listpids", cmd) )
@@ -149,7 +159,7 @@ int handle_tokens( char *tokens[], int token_count )
   }
 
   else {
-    exec_to_completion(tokens);
+    exec_to_completion(tokens, token_count);
   }
 
   return 0;
@@ -159,7 +169,7 @@ int handle_tokens( char *tokens[], int token_count )
   fork() a child and then use exec to execute ls
 */
 
-int exec_to_completion( char *tokens[] )
+int exec_to_completion( char *tokens[], int token_count )
 {
   pid_t child_pid = fork();
   int status;
@@ -202,13 +212,23 @@ int savepid( pid_t pid )
   return 0;
 }
 
-int savehist( char* cmd )
+int savehist( char *cmd_str )
 {
-  printf("saving cmd %s\n", cmd);
+  printf("cmd_history[%d] = %s\n", num_cmds_in_history, cmd_str);
+
+  cmd_history[num_cmds_in_history] = strdup( cmd_str );
+  // strcpy(cmd_history[num_cmds_in_history], cmd_str);
+  num_cmds_in_history++;
   return 0;
 }
 
-void showhist();
+void showhist()
+{
+  for (int i = 0; i < num_cmds_in_history; i++)
+  {
+    printf("tokens[%d]: %s\n", i, cmd_history[i]);
+  }
+}
 
 /*
  * < -------------- UTILITIES -------------- >
