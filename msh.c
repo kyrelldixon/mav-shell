@@ -50,10 +50,12 @@
 #define EXEC_FILE_INDEX 0           // The file to execute should always be at index 0
 #define FILE_PATH_INDEX 1           // The file path (for "cd") should always be at index 1
 #define MAX_HISTORY_CMDS 15
+#define MAX_PIDS 15
 
 char *cmd_history[MAX_HISTORY_CMDS];// Used to keep track of the last 15 commands
 int num_cmds_in_history = 0;
-pid_t pids[15];
+pid_t pids[MAX_PIDS];
+int num_pids_in_pids = 0;
 
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[], int token_count );
@@ -61,6 +63,7 @@ int handle_exec_error( char* cmd );
 int savepid( pid_t pid );
 int savehist( char *cmd_str );
 void showhist();
+void showpids();
 
 void print_tokens( char *tokens[], int token_count );
 char *concat_strings( char *s1, char *s2 );
@@ -159,7 +162,7 @@ int handle_tokens( char *tokens[], int token_count )
 
   else if ( streq("listpids", cmd) )
   {
-    printf("getting list of pids\n");
+    showpids();
   }
 
   else if ( streq("bg", cmd) )
@@ -201,6 +204,11 @@ int exec_to_completion( char *tokens[], int token_count )
     free(filepath); // The calling function should free the memory
     exit(EXIT_SUCCESS);
   }
+  else
+  {
+    savepid(child_pid);
+  }
+  
 
   waitpid(child_pid, &status, 0);
   
@@ -217,8 +225,23 @@ int handle_exec_error( char* exec_file )
 
 int savepid( pid_t pid )
 {
-  printf("saving pid %d\n", pid);
+  if (num_pids_in_pids >= MAX_PIDS)
+  {
+    return 1;
+  }
+
+  pids[num_pids_in_pids++] = pid;
   return 0;
+}
+
+void showpids()
+{
+  for (int i = 0; i < num_pids_in_pids; i++)
+  {
+    // Printing i + 1 since we want a more user friendly
+    // display index.
+    printf("%d: %d\n", (i + 1), pids[i]);
+  }
 }
 
 int savehist( char *cmd_str )
