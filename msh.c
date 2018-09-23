@@ -20,6 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+/*
+
+  Name: Kyrell Dixon
+  ID: 1001084446
+
+*/
+
 #define _GNU_SOURCE
 
 #include <stdio.h>
@@ -31,20 +38,22 @@
 #include <string.h>
 #include <signal.h>
 
-#define WHITESPACE " \t\n"      // We want to split our command line up into tokens
-                                // so we need to define what delimits our tokens.
-                                // In this case  white space
-                                // will separate the tokens on our command line
+#define WHITESPACE " \t\n"          // We want to split our command line up into tokens
+                                    // so we need to define what delimits our tokens.
+                                    // In this case  white space
+                                    // will separate the tokens on our command line
 
-#define MAX_COMMAND_SIZE 255    // The maximum command-line size
+#define MAX_COMMAND_SIZE 255        // The maximum command-line size
 
-#define MAX_NUM_ARGUMENTS 10    // Mav shell only supports ten arguments
+#define MAX_NUM_ARGUMENTS 10        // Mav shell only supports ten arguments
 
-#define EXEC_FILE_INDEX 0       // The file to execute should always be at index 0
-#define FILE_PATH_INDEX 1       // The file path (for "cd") should always be at index 1
+#define EXEC_FILE_INDEX 0           // The file to execute should always be at index 0
+#define FILE_PATH_INDEX 1           // The file path (for "cd") should always be at index 1
+#define MAX_HISTORY_CMDS 15
 
-char *cmd_history[15];          // Used to keep track of the last 15 commands
+char *cmd_history[MAX_HISTORY_CMDS];// Used to keep track of the last 15 commands
 int num_cmds_in_history = 0;
+pid_t pids[15];
 
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[], int token_count );
@@ -107,7 +116,7 @@ int main()
     }
 
     // Checks to make sure there are actual tokens
-    // before attempting to handle them. If null
+    // before attempting to handle them. If NULL
     // I want to start taking input again.
     if ( tokens[EXEC_FILE_INDEX] ) {
       handle_tokens( tokens, token_count );
@@ -214,11 +223,12 @@ int savepid( pid_t pid )
 
 int savehist( char *cmd_str )
 {
-  printf("cmd_history[%d] = %s\n", num_cmds_in_history, cmd_str);
+  if ( num_cmds_in_history >= MAX_HISTORY_CMDS )
+  {
+    return 1;
+  }
 
-  cmd_history[num_cmds_in_history] = strdup( cmd_str );
-  // strcpy(cmd_history[num_cmds_in_history], cmd_str);
-  num_cmds_in_history++;
+  cmd_history[num_cmds_in_history++] = strdup( cmd_str );
   return 0;
 }
 
@@ -226,7 +236,10 @@ void showhist()
 {
   for (int i = 0; i < num_cmds_in_history; i++)
   {
-    printf("tokens[%d]: %s\n", i, cmd_history[i]);
+    // Printing i + 1 since we want a more user friendly
+    // display index. Also needs to match the !n syntax
+    // for executing from history
+    printf("[%d]: %s", (i + 1), cmd_history[i]);
   }
 }
 
