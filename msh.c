@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
+#include <limits.h>
 
 #define WHITESPACE " \t\n"          // We want to split our command line up into tokens
                                     // so we need to define what delimits our tokens.
@@ -31,7 +32,7 @@
 #define MAX_PIDS 15
 
 char *cmd_history[MAX_HISTORY_CMDS];// Used to keep track of the last 15 commands
-int num_cmds_in_history = 0;
+int num_cmds_entered = 0;
 pid_t pids[MAX_PIDS];
 int num_pids_in_pids = 0;
 
@@ -39,7 +40,6 @@ int tokenize_string( char *cmd_str, char *tokens[], int token_count );
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[], int token_count );
 int exec_from_history( int history_val );
-int handle_exec_error( char *cmd );
 int savepid( pid_t pid );
 int savehist( char *cmd_str );
 void showhist();
@@ -51,7 +51,7 @@ char *concat_strings( char *s1, char *s2 );
 char *concat_path( char *path, char *filename );
 bool streq( char *s1, char *s2 );
 
-int main()
+int main( void )
 {
 
   char * cmd_str = (char*) malloc( MAX_COMMAND_SIZE );
@@ -115,6 +115,9 @@ int main()
   }
 
   free ( cmd_str );
+
+  // Gets actual value of commands so it will free accurately
+  int num_cmds_in_history = num_cmds_entered % MAX_HISTORY_CMDS;
   for (int i = 0; i < num_cmds_in_history; i++)
   {
     free ( cmd_history[i] );
@@ -182,7 +185,7 @@ int handle_tokens( char *tokens[], int token_count )
 }
 
 /**
- * Forks a child and uses exec to execute
+ * Forks a child and uses exec to execute from various filepaths
  * 
  * @param tokens List of tokens processed from user input
  * @param token_count The total number of tokens in tokens array
@@ -193,22 +196,42 @@ int exec_to_completion( char *tokens[], int token_count )
   pid_t child_pid = fork();
   int status;
 
-  // PATH variable constants for checking where file
-  // should execute from
-  char *PATH_BIN = "/bin";
-  char *PATH_USR_BIN = "/usr/bin";
-  char *PATH_USR_LOCAL_BIN = "/usr/local/bin";
+  // should match the number of paths in paths array
+  int NUM_PATHS = 4;
+
+  // gets curr directory to add to paths for requirements.
+  // using PATH_MAX for size since user file could be deeply
+  // nested in folders
+  char cwd[PATH_MAX];
+  getcwd(cwd, sizeof(cwd));
+
+  // ORDER MATTERS. Should execute command from path in order presented 
+  char *paths[] = {
+      "/usr/local/bin",
+      "/usr/bin",
+      "/bin",
+      cwd
+  };
 
   char *exec_file = tokens[EXEC_FILE_INDEX];
-  char *filepath = concat_path(PATH_BIN, exec_file);
+  char *filepath;
 
   if ( child_pid == 0 )
   {
-    if ( execv(filepath, tokens) < 0)
+    // Goes through each file and attempts to exec in the order
+    // of paths given. Will exit loop prematurely if exec_file
+    // exists on that path
+    for (int i = 0; i < NUM_PATHS; i++)
     {
-      handle_exec_error( exec_file );
+      filepath = concat_path(paths[i], exec_file);
+      execv(filepath, tokens);
     }
-    free(filepath); // The calling function should free the memory
+    
+    // If no file doesn't execute and loop reaches this point, then the
+    // command doesn't exist so printing command not found
+    printf("%s: Command not found.\n", exec_file);
+
+    free(filepath);
     exit(EXIT_SUCCESS);
   }
   else
@@ -221,10 +244,19 @@ int exec_to_completion( char *tokens[], int token_count )
   return 0;
 }
 
-// TODO: Fix bug. Has something to do with memory in tokens array
+/**
+ * Used to handle "!n" styled commands. Handles commands
+ * based on the position in the cmd_history array
+ * 
+ * @param history_val The "n" part of "!n". Represents
+ *                    command from user presented list
+ *                    after entering "history" command
+ * @return 0 if successful
+ */
+
 int exec_from_history( int history_val )
 {
-  if ( (history_val > 0) && (history_val <= num_cmds_in_history) )
+  if ( (history_val > 0) && (history_val <= num_cmds_entered) )
   {
     // The actual indices are 1 - value shown to the user
     // since we display them starting at index 1
@@ -238,23 +270,6 @@ int exec_from_history( int history_val )
     int token_count = 0;
     token_count = tokenize_string(cmd_history[ history_index ], tokens, token_count);
     handle_tokens(tokens, token_count);
-  }
-  return 0;
-}
-
-/**
- * Error handler for issues with the exec function
- * Determines steps to take on error from the exec()
- * function
- * 
- * @param exec_file The name of the file that resulted in
- *                  the error
- * @return 0 if successful
- */
-int handle_exec_error( char *exec_file )
-{
-  if ( errno == 2 ) {
-    printf("%s: Command not found.\n", exec_file);
   }
   return 0;
 }
@@ -302,12 +317,11 @@ void showpids()
  */
 int savehist( char *cmd_str )
 {
-  if ( num_cmds_in_history >= MAX_HISTORY_CMDS )
-  {
-    num_cmds_in_history = 0;
-  }
-
-  cmd_history[num_cmds_in_history++] = strdup( cmd_str );
+  // using % the max num of cmds so that it will loop
+  // and overwrite commands. This is so we have the last
+  // 15 commands entered.
+  int history_index = num_cmds_entered++ % MAX_HISTORY_CMDS;
+  cmd_history[history_index] = strdup( cmd_str );
   return 0;
 }
 
@@ -319,7 +333,8 @@ int savehist( char *cmd_str )
  */
 void showhist()
 {
-  for (int i = 0; i < num_cmds_in_history; i++)
+  int num_cmds_to_print = ( num_cmds_entered >= 15 ) ? 15 : num_cmds_entered; 
+  for (int i = 0; i < num_cmds_to_print; i++)
   {
     // Printing i + 1 since we want a more user friendly
     // display index. Also needs to match the !n syntax
