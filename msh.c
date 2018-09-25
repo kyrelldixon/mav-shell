@@ -44,6 +44,7 @@ int savepid( pid_t pid );
 int savehist( char *cmd_str );
 void showhist();
 void showpids();
+static void handle_signal( int sig );
 
 void print_tokens( char *tokens[], int token_count );
 char *concat_strings( char *s1, char *s2 );
@@ -54,11 +55,38 @@ int main()
 {
 
   char * cmd_str = (char*) malloc( MAX_COMMAND_SIZE );
+  struct sigaction act;
 
   while( 1 )
   {
     // Print out the msh prompt
     printf ("msh> ");
+
+    /*
+    Zero out the sigaction struct
+    */
+    memset(&act, '\0', sizeof(act));
+
+    /*
+    Set the handler to use the function handle_signal()
+    */
+    act.sa_handler = &handle_signal;
+
+    /* 
+    Install the handler for SIGINT and SIGTSTP and check the 
+    return value.
+    */
+    if (sigaction(SIGINT, &act, NULL) < 0)
+    {
+      perror("sigaction: ");
+      return 1;
+    }
+
+    if (sigaction(SIGTSTP, &act, NULL) < 0)
+    {
+      perror("sigaction: ");
+      return 1;
+    }
 
     // Read the command from the commandline.  The
     // maximum command that will be read is MAX_COMMAND_SIZE
@@ -297,6 +325,27 @@ void showhist()
     // display index. Also needs to match the !n syntax
     // for executing from history
     printf("[%d]: %s", (i + 1), cmd_history[i]);
+  }
+}
+
+static void handle_signal(int sig)
+{
+
+  /*
+   Determine which of the two signals were caught and 
+   print an appropriate message.
+  */
+
+  switch (sig)
+  {
+  case SIGINT:
+    break;
+
+  case SIGTSTP:
+    break;
+
+  default:
+    break;
   }
 }
 
