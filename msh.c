@@ -118,7 +118,8 @@ int main( void )
 
   // Gets actual value of commands so it will free accurately
   int num_cmds_in_history = num_cmds_entered % MAX_HISTORY_CMDS;
-  for (int i = 0; i < num_cmds_in_history; i++)
+  int i;
+  for (i = 0; i < num_cmds_in_history; i++)
   {
     free ( cmd_history[i] );
   }
@@ -221,7 +222,8 @@ int exec_to_completion( char *tokens[], int token_count )
     // Goes through each file and attempts to exec in the order
     // of paths given. Will exit loop prematurely if exec_file
     // exists on that path
-    for (int i = 0; i < NUM_PATHS; i++)
+    int i;
+    for (i = 0; i < NUM_PATHS; i++)
     {
       filepath = concat_path(paths[i], exec_file);
       execv(filepath, tokens);
@@ -299,7 +301,8 @@ int savepid( pid_t pid )
  */
 void showpids()
 {
-  for (int i = 0; i < num_pids_in_pids; i++)
+  int i;
+  for (i = 0; i < num_pids_in_pids; i++)
   {
     // Printing i + 1 since we want a more user friendly
     // display index.
@@ -333,8 +336,9 @@ int savehist( char *cmd_str )
  */
 void showhist()
 {
-  int num_cmds_to_print = ( num_cmds_entered >= 15 ) ? 15 : num_cmds_entered; 
-  for (int i = 0; i < num_cmds_to_print; i++)
+  int num_cmds_to_print = ( num_cmds_entered >= 15 ) ? 15 : num_cmds_entered;
+  int i;
+  for (i = 0; i < num_cmds_to_print; i++)
   {
     // Printing i + 1 since we want a more user friendly
     // display index. Also needs to match the !n syntax
@@ -418,7 +422,8 @@ int tokenize_string( char *cmd_str, char *tokens[], int token_count )
  */
 void print_tokens( char *tokens[], int token_count )
 {
-  for (int i = 0; i < token_count; i++)
+  int i;
+  for (i = 0; i < token_count; i++)
   {
     printf("token[%d]: %s\n", i, tokens[i]);
   }
