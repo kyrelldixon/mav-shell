@@ -35,10 +35,11 @@ int num_cmds_in_history = 0;
 pid_t pids[MAX_PIDS];
 int num_pids_in_pids = 0;
 
-int tokenize_string( char* cmd_str, char *tokens[], int token_count );
+int tokenize_string( char *cmd_str, char *tokens[], int token_count );
 int handle_tokens( char *tokens[], int token_count );
 int exec_to_completion( char *tokens[], int token_count );
-int handle_exec_error( char* cmd );
+int exec_from_history( int history_val );
+int handle_exec_error( char *cmd );
 int savepid( pid_t pid );
 int savehist( char *cmd_str );
 void showhist();
@@ -134,6 +135,15 @@ int handle_tokens( char *tokens[], int token_count )
     printf("getting bg\n");
   }
 
+  // an "!" as the first character in a command means
+  // the user is attempting to execute a command from
+  // history. This handles that use case
+  else if ( cmd[0] == '!' )
+  {
+    int history_val = atoi( cmd + 1 );
+    exec_from_history( history_val );
+  }
+
   else {
     // If none of the above checks are true, then the
     // user just wants to execute some command
@@ -183,6 +193,27 @@ int exec_to_completion( char *tokens[], int token_count )
   return 0;
 }
 
+// TODO: Fix bug. Has something to do with memory in tokens array
+int exec_from_history( int history_val )
+{
+  if ( (history_val > 0) && (history_val <= num_cmds_in_history) )
+  {
+    // The actual indices are 1 - value shown to the user
+    // since we display them starting at index 1
+    int history_index = history_val - 1;
+    
+    // store a new set of tokens
+    char *tokens[MAX_NUM_ARGUMENTS];
+
+    // get a new token count a update tokens based
+    // on cmd from history.
+    int token_count = 0;
+    token_count = tokenize_string(cmd_history[ history_index ], tokens, token_count);
+    handle_tokens(tokens, token_count);
+  }
+  return 0;
+}
+
 /**
  * Error handler for issues with the exec function
  * Determines steps to take on error from the exec()
@@ -192,7 +223,7 @@ int exec_to_completion( char *tokens[], int token_count )
  *                  the error
  * @return 0 if successful
  */
-int handle_exec_error( char* exec_file )
+int handle_exec_error( char *exec_file )
 {
   if ( errno == 2 ) {
     printf("%s: Command not found.\n", exec_file);
@@ -245,7 +276,7 @@ int savehist( char *cmd_str )
 {
   if ( num_cmds_in_history >= MAX_HISTORY_CMDS )
   {
-    return 1;
+    num_cmds_in_history = 0;
   }
 
   cmd_history[num_cmds_in_history++] = strdup( cmd_str );
