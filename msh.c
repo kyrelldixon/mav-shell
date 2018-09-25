@@ -162,10 +162,10 @@ int handle_tokens( char *tokens[], int token_count )
     showpids();
   }
 
-  else if ( streq("bg", cmd) )
-  {
-    printf("getting bg\n");
-  }
+  // else if ( streq("bg", cmd) )
+  // {
+  //   printf("getting bg\n");
+  // }
 
   // an "!" as the first character in a command means
   // the user is attempting to execute a command from
@@ -273,6 +273,12 @@ int exec_from_history( int history_val )
     token_count = tokenize_string(cmd_history[ history_index ], tokens, token_count);
     handle_tokens(tokens, token_count);
   }
+  
+  else
+  {
+    printf("Command not in history.\n");
+  }
+  
   return 0;
 }
 
