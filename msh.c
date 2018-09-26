@@ -51,7 +51,7 @@ char *concat_strings( char *s1, char *s2 );
 char *concat_path( char *path, char *filename );
 bool streq( char *s1, char *s2 );
 
-int main( void )
+int main(void)
 {
 
   char * cmd_str = (char*) malloc( MAX_COMMAND_SIZE );
@@ -325,7 +325,7 @@ void showpids()
  * 
  * @param cmd_str The initial string entered by the user
  *                before tokenization and whitespace removal
- * @return 0 if successful, 1 if max commands reached
+ * @return 0 if successful, 1 if error
  */
 int savehist( char *cmd_str )
 {
@@ -333,6 +333,7 @@ int savehist( char *cmd_str )
 
   // makes a copy so it won't modify the original string
   char *cmd_str_copy = strdup( cmd_str );
+
   // removes the extra \n in the string to make it easier to
   // work with
   if (cmd_str_copy[cmd_len - 1] == '\n')
@@ -340,10 +341,16 @@ int savehist( char *cmd_str )
     cmd_str_copy[cmd_len - 1] = '\0';
   }
 
+  // don't want to save a string to history
+  // if it's just whitespace so we return 1
+  // for error
+  if ( (cmd_str[0] == ' ') || (cmd_str[0] == '\n') || (cmd_str[0] == '\t') ) {
+    return 1;
+  }
+
   // using % the max num of cmds so that it will loop
   // and overwrite commands. This is so we have the last
   // 15 commands entered.
-  printf("String: '%s'\n", cmd_str_copy);
   int history_index = num_cmds_entered++ % MAX_HISTORY_CMDS;
   cmd_history[history_index] = strdup( cmd_str );
   return 0;
@@ -371,6 +378,12 @@ void showhist()
   }
 }
 
+/**
+ * Handles various process based signals
+ * 
+ * @param sig the value of the signal
+ * @return nothing
+ */
 static void handle_signal(int sig)
 {
 
