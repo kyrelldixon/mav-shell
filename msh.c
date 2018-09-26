@@ -34,7 +34,7 @@
 char *cmd_history[MAX_HISTORY_CMDS];// Used to keep track of the last 15 commands
 int num_cmds_entered = 0;
 pid_t pids[MAX_PIDS];
-int num_pids_in_pids = 0;
+int num_pids_entered = 0;
 
 int tokenize_string( char *cmd_str, char *tokens[], int token_count );
 int handle_tokens( char *tokens[], int token_count );
@@ -286,16 +286,15 @@ int exec_from_history( int history_val )
  * Saves pid for child resulting from fork() command
  * 
  * @param pid The child pid to save
- * @return 0 if successful, 1 if not
+ * @return 0 if successful
  */
 int savepid( pid_t pid )
 {
-  if (num_pids_in_pids >= MAX_PIDS)
-  {
-    return 1;
-  }
-
-  pids[num_pids_in_pids++] = pid;
+  // using "%" the max num of pids so that it will loop
+  // and overwrite pids. This is so we have the last
+  // 15 pids entered.
+  int pid_index = num_pids_entered++ % MAX_PIDS;
+  pids[pid_index] = pid;
   return 0;
 }
 
@@ -307,12 +306,16 @@ int savepid( pid_t pid )
  */
 void showpids()
 {
+  // takes either the number of pids entered
+  // or 15, whichever is less. Does this so it will
+  // only print max of 15
+  int num_pids_to_print = (num_pids_entered >= 15) ? 15 : num_pids_entered;
   int i;
-  for (i = 0; i < num_pids_in_pids; i++)
+  for (i = 0; i < num_pids_to_print; i++)
   {
     // Printing i + 1 since we want a more user friendly
     // display index.
-    printf("%d: %d\n", (i + 1), pids[i]);
+    printf("[%d]: %d\n", (i + 1), pids[i]);
   }
 }
 
@@ -326,9 +329,21 @@ void showpids()
  */
 int savehist( char *cmd_str )
 {
+  int cmd_len = strlen(cmd_str);
+
+  // makes a copy so it won't modify the original string
+  char *cmd_str_copy = strdup( cmd_str );
+  // removes the extra \n in the string to make it easier to
+  // work with
+  if (cmd_str_copy[cmd_len - 1] == '\n')
+  {
+    cmd_str_copy[cmd_len - 1] = '\0';
+  }
+
   // using % the max num of cmds so that it will loop
   // and overwrite commands. This is so we have the last
   // 15 commands entered.
+  printf("String: '%s'\n", cmd_str_copy);
   int history_index = num_cmds_entered++ % MAX_HISTORY_CMDS;
   cmd_history[history_index] = strdup( cmd_str );
   return 0;
@@ -342,6 +357,9 @@ int savehist( char *cmd_str )
  */
 void showhist()
 {
+  // takes either the number of commands entered
+  // or 15, whichever is less. Does this so it will
+  // only print max of 15
   int num_cmds_to_print = ( num_cmds_entered >= 15 ) ? 15 : num_cmds_entered;
   int i;
   for (i = 0; i < num_cmds_to_print; i++)
