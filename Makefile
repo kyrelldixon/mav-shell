@@ -6,4 +6,3 @@ run: msh
 
 clean:
 	rm -rf *.o *.out msh
-	

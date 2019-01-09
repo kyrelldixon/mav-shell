@@ -44,6 +44,7 @@ int savepid( pid_t pid );
 int savehist( char *cmd_str );
 void showhist();
 void showpids();
+int bg();
 static void handle_signal( int sig );
 
 void print_tokens( char *tokens[], int token_count );
@@ -162,10 +163,10 @@ int handle_tokens( char *tokens[], int token_count )
     showpids();
   }
 
-  // else if ( streq("bg", cmd) )
-  // {
-  //   printf("getting bg\n");
-  // }
+  else if ( streq("bg", cmd) )
+  {
+    bg();
+  }
 
   // an "!" as the first character in a command means
   // the user is attempting to execute a command from
@@ -376,6 +377,22 @@ void showhist()
     // for executing from history
     printf("[%d]: %s", (i + 1), cmd_history[i]);
   }
+}
+
+/**
+ * Sends a SIGCONT signal to the last pid in the
+ * pids array
+ * 
+ * @return 0 if successful
+ */
+int bg()
+{
+  // Last pid inserted will always be at
+  // num_pids_entered % MAX_PIDS
+  int pid_index = num_pids_entered % MAX_PIDS;
+  kill(pids[pid_index], SIGCONT);
+
+  return 0;
 }
 
 /**
